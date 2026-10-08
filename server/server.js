@@ -1,24 +1,30 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
-import cors from "cors"
+
 import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
-const app=express();
+const app = express();
 
-connectDB()
+connectDB();
 
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-const PORT= process.env.PORT || 3000
+app.use("/api/auth", authRoutes);
 
-app.get("/",(req,res)=>{
-    res.send("hello world")
-    console.log("request")
-})
+app.get("/test", (req, res) => {
+  res.json({
+    message: "Server is working",
+  });
+});
 
-app.listen(PORT,()=>{
-    console.log("server running on port 3000")
-})
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
