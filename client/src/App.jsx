@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
+import Transactions from "./pages/Transactions";
+
 function App() {
   return (
     <Routes>
@@ -7,11 +9,13 @@ function App() {
         path="/"
         element={
           <div>
-            <h1 className="bg-red-300">Expense Finance Tracker</h1>
+            <h1>Expense Finance Tracker</h1>
             <p>Frontend application is running.</p>
           </div>
         }
       />
+
+      <Route path="/transactions" element={<Transactions />} />
     </Routes>
   );
 }
