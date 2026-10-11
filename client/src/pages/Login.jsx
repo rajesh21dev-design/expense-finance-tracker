@@ -25,7 +25,7 @@ export default function Login() {
     const result = await dispatch(loginUser(form));
 
     if (loginUser.fulfilled.match(result)) {
-      navigate("/transactions", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   };
 
