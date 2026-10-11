@@ -1,16 +1,48 @@
-import { useEffect } from "react";
+
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import {
+  Wallet,
   TrendingUp,
   TrendingDown,
-  Wallet,
   ReceiptText,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowRight,
+  RefreshCw,
+  CalendarDays,
+  CircleDollarSign,
 } from "lucide-react";
 
 import { fetchDashboardSummary } from "../redux/slices/dashboardSlice.js";
-import SummaryCard from "../components/dashboard/SummaryCard.jsx";
+import { fetchTransactions } from "../redux/slices/transactionSlice.js";
+
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(Number(amount) || 0);
+
+const formatDate = (dateValue) => {
+  if (!dateValue) return "Date unavailable";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getTransactionTitle = (transaction) =>
+  transaction.description?.trim() ||
+  transaction.category ||
+  "Untitled transaction";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -19,202 +51,350 @@ export default function Dashboard() {
     (state) => state.dashboard
   );
 
+  const transactionState = useSelector((state) => state.transactions);
+
+  // Fetch existing dashboard and transaction data.
   useEffect(() => {
     dispatch(fetchDashboardSummary());
+    dispatch(fetchTransactions());
   }, [dispatch]);
+
+  const transactions = Array.isArray(transactionState?.transactions)
+    ? transactionState.transactions
+    : [];
+
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => {
+        const dateA = new Date(
+          a.date || a.createdAt || 0
+        ).getTime();
+
+        const dateB = new Date(
+          b.date || b.createdAt || 0
+        ).getTime();
+
+        return dateB - dateA;
+      })
+      .slice(0, 5);
+  }, [transactions]);
 
   const cards = [
     {
       title: "Total Income",
       amount: summary?.totalIncome ?? 0,
+      description: "Money received",
       icon: TrendingUp,
-      color: "green",
-      description: "Your total earnings",
-      trendIcon: ArrowUpRight,
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      amountColor: "text-emerald-600",
+      accent: "bg-emerald-500",
     },
     {
       title: "Total Expenses",
       amount: summary?.totalExpenses ?? 0,
+      description: "Money spent",
       icon: TrendingDown,
-      color: "red",
-      description: "Your total spending",
-      trendIcon: ArrowDownRight,
+      iconBg: "bg-rose-50",
+      iconColor: "text-rose-600",
+      amountColor: "text-rose-600",
+      accent: "bg-rose-500",
     },
     {
       title: "Current Balance",
       amount: summary?.balance ?? 0,
-      icon: Wallet,
-      color: "blue",
       description: "Your available balance",
-      trendIcon: Wallet,
+      icon: Wallet,
+      iconBg: "bg-indigo-50",
+      iconColor: "text-indigo-600",
+      amountColor: "text-slate-900",
+      accent: "bg-indigo-500",
     },
     {
       title: "Transactions",
       amount: summary?.transactionCount ?? 0,
+      description: "Recorded transactions",
       icon: ReceiptText,
-      color: "purple",
-      description: "All recorded transactions",
-      trendIcon: ReceiptText,
-      isCurrency: false,
+      iconBg: "bg-violet-50",
+      iconColor: "text-violet-600",
+      amountColor: "text-slate-900",
+      accent: "bg-violet-500",
+      isCount: true,
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-500">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-          <p className="text-sm font-medium">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700">
-        <h2 className="font-semibold">Unable to load dashboard</h2>
-        <p className="mt-1 text-sm">{error}</p>
-        <button
-          type="button"
-          onClick={() => dispatch(fetchDashboardSummary())}
-          className="mt-4 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full space-y-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-8">
       {/* Page heading */}
-      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
-            Overview
-          </p>
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-indigo-600">
+            <span className="h-2 w-2 rounded-full bg-indigo-600" />
+            Financial overview
+          </div>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Financial Dashboard
+            Dashboard
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
-            Track your income, expenses, and balance in one place.
+            Track your income, monitor expenses, and stay in control of your money.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:self-auto">
-          <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-          <span className="text-sm font-medium text-slate-600">
-            Financial overview
-          </span>
-        </div>
+        <Link
+          to="/transactions"
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700"
+        >
+          <CircleDollarSign size={18} />
+          Manage transactions
+          <ArrowRight size={16} />
+        </Link>
       </section>
 
-      {/* Summary cards */}
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-800 sm:text-lg">
-            Your Summary
-          </h2>
+      {/* Summary loading */}
+      {loading && (
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-500">
+          <RefreshCw size={18} className="animate-spin text-indigo-600" />
+          Refreshing your financial summary...
+        </div>
+      )}
 
-          <span className="text-xs font-medium text-slate-400 sm:text-sm">
-            All transactions
+      {/* Summary error */}
+      {error && (
+        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center">
+          <p className="text-sm text-rose-700">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => dispatch(fetchDashboardSummary())}
+            className="inline-flex items-center gap-2 self-start rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+          >
+            <RefreshCw size={15} />
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Financial summary cards */}
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              Your finances
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              A snapshot of your financial activity
+            </p>
+          </div>
+
+          <span className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 sm:inline-flex">
+            <CalendarDays size={14} />
+            All time
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => {
             const Icon = card.icon;
-            const TrendIcon = card.trendIcon;
-
-            const styles = {
-              green: {
-                icon: "bg-emerald-50 text-emerald-600",
-                accent: "bg-emerald-500",
-              },
-              red: {
-                icon: "bg-rose-50 text-rose-600",
-                accent: "bg-rose-500",
-              },
-              blue: {
-                icon: "bg-blue-50 text-blue-600",
-                accent: "bg-blue-500",
-              },
-              purple: {
-                icon: "bg-violet-50 text-violet-600",
-                accent: "bg-violet-500",
-              },
-            };
-
-            const style = styles[card.color];
 
             return (
-              <div
+              <article
                 key={card.title}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg sm:p-6"
+                className="group relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-slate-200/60 sm:p-6"
               >
                 <div
-                  className={`absolute inset-x-0 top-0 h-1 ${style.accent}`}
+                  className={`absolute inset-x-0 top-0 h-1 ${card.accent}`}
                 />
 
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-500">
                       {card.title}
                     </p>
 
-                    <p className="mt-4 break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                      {card.isCurrency
-                        ? new Intl.NumberFormat("en-IN", {
-                            style: "currency",
-                            currency: "INR",
-                            maximumFractionDigits: 2,
-                          }).format(Number(card.amount) || 0)
-                        : new Intl.NumberFormat("en-IN").format(
-                            Number(card.amount) || 0
-                          )}
+                    <p
+                      className={`mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl ${card.amountColor}`}
+                    >
+                      {card.isCount
+                        ? Number(card.amount).toLocaleString("en-IN")
+                        : formatCurrency(card.amount)}
                     </p>
                   </div>
 
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${style.icon}`}
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${card.iconBg} ${card.iconColor}`}
                   >
                     <Icon size={23} strokeWidth={2} />
                   </div>
                 </div>
 
-                <div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-4">
-                  <TrendIcon size={16} className="text-slate-400" />
-                  <p className="text-xs font-medium text-slate-500 sm:text-sm">
+                <div className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4">
+                  <ArrowUpRight
+                    size={15}
+                    className="text-slate-400"
+                  />
+                  <p className="text-xs text-slate-500">
                     {card.description}
                   </p>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       </section>
 
-      {/* Informational section */}
-      <section className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-white p-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-            <Wallet size={24} />
-          </div>
-
+      {/* Recent transactions */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
-              Stay on top of your finances
+              Recent transactions
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Keep your income and expenses organized. Visit Transactions
-              to add records, update existing entries, or review your
-              spending history.
+            <p className="mt-1 text-sm text-slate-500">
+              Your latest financial activity
             </p>
           </div>
+
+          <Link
+            to="/transactions"
+            className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50"
+          >
+            View all
+            <ArrowRight size={16} />
+          </Link>
         </div>
+
+        {recentTransactions.length === 0 ? (
+          <div className="flex flex-col items-center px-5 py-14 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <ReceiptText size={29} />
+            </div>
+
+            <h3 className="mt-5 text-base font-semibold text-slate-800">
+              No transactions yet
+            </h3>
+
+            <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
+              Your recent income and expenses will appear here when you add transactions.
+            </p>
+
+            <Link
+              to="/transactions"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Add a transaction
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {recentTransactions.map((transaction) => {
+              const isIncome =
+                String(transaction.type).toLowerCase() === "income";
+
+              const amount = Number(transaction.amount) || 0;
+              const Icon = isIncome ? ArrowDownRight : ArrowUpRight;
+
+              return (
+                <div
+                  key={transaction._id || transaction.id}
+                  className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-slate-50/80 sm:px-7"
+                >
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                        isIncome
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-rose-50 text-rose-600"
+                      }`}
+                    >
+                      <Icon size={21} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-800 sm:text-base">
+                        {getTransactionTitle(transaction)}
+                      </p>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                        <span>{transaction.category || "Uncategorized"}</span>
+                        <span className="text-slate-300">•</span>
+                        <span>{formatDate(transaction.date || transaction.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <p
+                      className={`text-sm font-bold sm:text-base ${
+                        isIncome
+                          ? "text-emerald-600"
+                          : "text-rose-600"
+                      }`}
+                    >
+                      {isIncome ? "+" : "-"}
+                      {formatCurrency(amount)}
+                    </p>
+
+                    <span
+                      className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        isIncome
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      {transaction.type || "expense"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
+          <Link
+            to="/transactions"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-indigo-600"
+          >
+            Manage all transactions
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Helpful footer panel */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white shadow-lg shadow-indigo-600/10 sm:p-8">
+        <div className="relative z-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+          <div className="max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-indigo-50">
+              <Wallet size={14} />
+              Better financial habits
+            </div>
+
+            <h2 className="text-xl font-bold sm:text-2xl">
+              Stay on top of your finances
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-indigo-100 sm:text-base">
+              Keep your records organized, review your spending, and make informed decisions about your money.
+            </p>
+          </div>
+
+          <Link
+            to="/transactions"
+            className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
+          >
+            Manage finances
+            <ArrowRight size={17} />
+          </Link>
+        </div>
+
+        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full border-[35px] border-white/10" />
+        <div className="pointer-events-none absolute -bottom-24 right-36 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
       </section>
     </div>
   );

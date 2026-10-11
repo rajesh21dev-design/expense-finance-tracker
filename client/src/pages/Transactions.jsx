@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -8,12 +9,13 @@ import {
   Search,
   Plus,
   CalendarDays,
-  Tag,
   Pencil,
   Trash2,
   X,
   RotateCcw,
   TrendingUp,
+  CircleDollarSign,
+  ArrowRight,
 } from "lucide-react";
 
 import {
@@ -36,12 +38,16 @@ const formatCurrency = (amount) =>
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 2,
-  }).format(amount || 0);
+  }).format(Number(amount) || 0);
 
 const formatDate = (date) => {
   if (!date) return "No date";
 
-  return new Date(date).toLocaleDateString("en-IN", {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) return "No date";
+
+  return parsedDate.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -49,7 +55,7 @@ const formatDate = (date) => {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100";
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100";
 
 const labelClass =
   "mb-2 block text-sm font-semibold text-slate-700";
@@ -151,11 +157,11 @@ const Transactions = () => {
 
     const result = editingId
       ? await dispatch(
-          updateTransaction({
-            id: editingId,
-            transactionData,
-          })
-        )
+        updateTransaction({
+          id: editingId,
+          transactionData,
+        })
+      )
       : await dispatch(createTransaction(transactionData));
 
     if (
@@ -204,35 +210,39 @@ const Transactions = () => {
     setMonthFilter("");
   };
 
+  const handleAddTransaction = () => {
+    handleCancelEdit();
+
+    document
+      .getElementById("transaction-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <main className="mx-auto w-full max-w-[1600px] space-y-7 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-slate-50 text-slate-900">
+      <main className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
         {/* Page heading */}
-        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-violet-600">
-              <span className="h-2 w-2 rounded-full bg-violet-600" />
-              Personal Finance
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+              <span className="h-2 w-2 rounded-full bg-indigo-600" />
+              PERSONAL FINANCE
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
               Transactions
             </h1>
 
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">
-              Track your income and expenses in one place.
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">
+              Manage your income and expenses, and keep track
+              of where your money goes.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => {
-              handleCancelEdit();
-              document
-                .getElementById("transaction-form")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700"
+            onClick={handleAddTransaction}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
           >
             <Plus size={18} />
             Add transaction
@@ -247,6 +257,7 @@ const Transactions = () => {
             icon={ArrowDownLeft}
             iconClass="bg-emerald-50 text-emerald-600"
             description="Money received"
+            accent="bg-emerald-500"
           />
 
           <SummaryCard
@@ -255,50 +266,64 @@ const Transactions = () => {
             icon={ArrowUpRight}
             iconClass="bg-rose-50 text-rose-600"
             description="Money spent"
+            accent="bg-rose-500"
           />
 
           <SummaryCard
             title="Net Balance"
             amount={balance}
             icon={Wallet}
-            iconClass="bg-violet-50 text-violet-600"
+            iconClass="bg-indigo-50 text-indigo-600"
             description="Income minus expenses"
             amountClass={
               balance < 0 ? "text-rose-600" : "text-slate-900"
             }
+            accent="bg-indigo-500"
           />
         </section>
 
-        {/* Add / Edit form */}
+        {/* Add / edit form */}
         <section
           id="transaction-form"
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+          className="scroll-mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
         >
-          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5 sm:px-7">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-              {editingId ? <Pencil size={21} /> : <ReceiptText size={21} />}
+          <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-7">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                {editingId ? (
+                  <Pencil size={21} />
+                ) : (
+                  <CircleDollarSign size={23} />
+                )}
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {editingId ? "Edit transaction" : "New transaction"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {editingId
+                    ? "Update your transaction details."
+                    : "Add an income or expense to your records."}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {editingId ? "Edit transaction" : "New transaction"}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {editingId
-                  ? "Update the details below."
-                  : "Enter the details of your income or expense."}
-              </p>
-            </div>
+            {editingId && (
+              <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                Editing
+              </span>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 p-5 sm:p-7">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-7">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               <div>
-                <label className={labelClass}>
+                <label className={labelClass} htmlFor="transaction-type">
                   Transaction type
                 </label>
-
                 <select
+                  id="transaction-type"
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
@@ -311,11 +336,11 @@ const Transactions = () => {
               </div>
 
               <div>
-                <label className={labelClass}>
+                <label className={labelClass} htmlFor="transaction-amount">
                   Amount (₹)
                 </label>
-
                 <input
+                  id="transaction-amount"
                   type="number"
                   name="amount"
                   placeholder="e.g. 2500"
@@ -329,12 +354,14 @@ const Transactions = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Category</label>
-
+                <label className={labelClass} htmlFor="transaction-category">
+                  Category
+                </label>
                 <input
+                  id="transaction-category"
                   type="text"
                   name="category"
-                  placeholder="e.g. Food, Salary, Travel"
+                  placeholder="Food, Salary, Travel..."
                   value={formData.category}
                   onChange={handleChange}
                   required
@@ -343,9 +370,11 @@ const Transactions = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Date</label>
-
+                <label className={labelClass} htmlFor="transaction-date">
+                  Date
+                </label>
                 <input
+                  id="transaction-date"
                   type="date"
                   name="date"
                   value={formData.date}
@@ -356,14 +385,17 @@ const Transactions = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className={labelClass}>
+                <label
+                  className={labelClass}
+                  htmlFor="transaction-description"
+                >
                   Description
                   <span className="ml-1 font-normal text-slate-400">
                     (optional)
                   </span>
                 </label>
-
                 <input
+                  id="transaction-description"
                   type="text"
                   name="description"
                   placeholder="What was this transaction for?"
@@ -374,11 +406,11 @@ const Transactions = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
+            <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {editingId ? <Pencil size={17} /> : <Plus size={18} />}
                 {loading
@@ -403,29 +435,28 @@ const Transactions = () => {
         </section>
 
         {/* Search and filters */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
             <div>
               <h2 className="text-lg font-bold text-slate-900">
                 Transaction history
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Search and filter your records.
+                Find and manage your financial records.
               </p>
             </div>
 
-            <span className="w-fit rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
+            <span className="w-fit rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
               {filteredTransactions.length} of {safeTransactions.length} records
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-4">
             <div className="relative">
               <Search
                 size={18}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
               />
-
               <input
                 type="search"
                 placeholder="Search transactions..."
@@ -452,7 +483,6 @@ const Transactions = () => {
                 size={18}
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
               />
-
               <input
                 type="month"
                 value={monthFilter}
@@ -465,7 +495,7 @@ const Transactions = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
             >
               <RotateCcw size={16} />
               Clear filters
@@ -475,7 +505,7 @@ const Transactions = () => {
           {error && (
             <div
               role="alert"
-              className="mt-5 rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700"
+              className="mx-5 mb-4 rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700 sm:mx-6"
             >
               {typeof error === "string"
                 ? error
@@ -484,10 +514,15 @@ const Transactions = () => {
           )}
 
           {/* Transaction list */}
-          <div className="mt-6 space-y-3">
+          <div className="space-y-3 px-5 pb-5 sm:px-6 sm:pb-6">
             {loading && safeTransactions.length === 0 && (
-              <div className="py-12 text-center text-sm text-slate-500">
-                Loading your transactions...
+              <div className="rounded-xl border border-slate-100 bg-slate-50 py-12 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm">
+                  <ReceiptText size={22} />
+                </div>
+                <p className="mt-3 text-sm font-medium text-slate-600">
+                  Loading your transactions...
+                </p>
               </div>
             )}
 
@@ -500,7 +535,6 @@ const Transactions = () => {
                 <h3 className="mt-4 font-bold text-slate-800">
                   No transactions found
                 </h3>
-
                 <p className="mt-1 text-sm text-slate-500">
                   Try another search or clear your filters.
                 </p>
@@ -508,7 +542,7 @@ const Transactions = () => {
                 <button
                   type="button"
                   onClick={handleClearFilters}
-                  className="mt-4 text-sm font-semibold text-violet-600 hover:text-violet-700"
+                  className="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
                 >
                   Clear all filters
                 </button>
@@ -521,14 +555,13 @@ const Transactions = () => {
               return (
                 <article
                   key={transaction._id}
-                  className="group flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition hover:border-violet-200 hover:shadow-md sm:flex-row sm:items-center sm:gap-5 sm:p-5"
+                  className="group flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-indigo-200 hover:shadow-md sm:flex-row sm:items-center sm:gap-5 sm:p-5"
                 >
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                      isIncome
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isIncome
                         ? "bg-emerald-50 text-emerald-600"
                         : "bg-rose-50 text-rose-600"
-                    }`}
+                      }`}
                   >
                     {isIncome ? (
                       <ArrowDownLeft size={23} />
@@ -539,16 +572,15 @@ const Transactions = () => {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-slate-900">
+                      <h3 className="break-words font-bold text-slate-900">
                         {transaction.category}
                       </h3>
 
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                          isIncome
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide ${isIncome
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-rose-50 text-rose-700"
-                        }`}
+                          }`}
                       >
                         {isIncome ? "INCOME" : "EXPENSE"}
                       </span>
@@ -558,24 +590,18 @@ const Transactions = () => {
                       {transaction.description || "No description added"}
                     </p>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
                       <span className="inline-flex items-center gap-1.5">
                         <CalendarDays size={13} />
                         {formatDate(transaction.date)}
                       </span>
-
-                      <span className="inline-flex items-center gap-1.5">
-                        <Tag size={13} />
-                        {transaction.category}
-                      </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:justify-end sm:border-0 sm:pt-0">
+                  <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:min-w-[190px] sm:items-end sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
                     <p
-                      className={`text-lg font-bold tabular-nums ${
-                        isIncome ? "text-emerald-600" : "text-rose-600"
-                      }`}
+                      className={`text-lg font-bold tabular-nums ${isIncome ? "text-emerald-600" : "text-rose-600"
+                        }`}
                     >
                       {isIncome ? "+" : "−"}
                       {formatCurrency(Number(transaction.amount) || 0)}
@@ -586,7 +612,7 @@ const Transactions = () => {
                         type="button"
                         onClick={() => handleEdit(transaction)}
                         aria-label={`Edit ${transaction.category}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                       >
                         <Pencil size={14} />
                         Edit
@@ -607,6 +633,23 @@ const Transactions = () => {
               );
             })}
           </div>
+
+          {filteredTransactions.length > 0 && (
+            <div className="flex flex-col justify-between gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-6">
+              <span>
+                Showing {filteredTransactions.length} transaction
+                {filteredTransactions.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={handleAddTransaction}
+                className="inline-flex items-center gap-1.5 font-semibold text-indigo-600 transition hover:text-indigo-700"
+              >
+                Add another transaction
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          )}
         </section>
 
         <footer className="flex flex-col justify-between gap-2 border-t border-slate-200 py-4 text-xs text-slate-400 sm:flex-row">
@@ -628,21 +671,32 @@ const SummaryCard = ({
   iconClass,
   description,
   amountClass = "text-slate-900",
+  accent,
 }) => (
-  <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-6">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <p className="text-sm font-medium text-slate-500">{title}</p>
+  <article className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-6">
+    <div
+      className={`absolute inset-x-0 top-0 h-1 ${accent}`}
+    />
+
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-slate-500">
+          {title}
+        </p>
+
         <p
           className={`mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl ${amountClass}`}
         >
           {formatCurrency(amount)}
         </p>
-        <p className="mt-2 text-xs text-slate-400">{description}</p>
+
+        <p className="mt-2 text-xs text-slate-400">
+          {description}
+        </p>
       </div>
 
       <div
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconClass}`}
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
       >
         <Icon size={23} />
       </div>

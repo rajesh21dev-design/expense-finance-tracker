@@ -1,24 +1,29 @@
-
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   LayoutDashboard,
   ArrowLeftRight,
   Wallet,
   LogOut,
-  Menu,
   X,
   ChevronRight,
+  UserRound,
 } from "lucide-react";
 import { useState } from "react";
-import { UserRound } from "lucide-react";
-import { useSelector } from "react-redux";
 import { logout } from "../../redux/slices/authSlice.js";
 
 export default function AppLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const user = useSelector((state) => state.auth.user);
+
+  const username =
+    user?.name ||
+    user?.username ||
+    user?.email?.split("@")[0] ||
+    "User";
 
   const navItems = [
     {
@@ -40,22 +45,15 @@ export default function AppLayout() {
   };
 
   const linkClass = ({ isActive }) =>
-    `group flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${isActive
-      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-950/30"
-      : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+    `group flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
+      isActive
+        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-950/30"
+        : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
     }`;
 
-  const user = useSelector((state) => state.auth.user);
-
-  const username =
-    user?.name ||
-    user?.username ||
-    user?.email?.split("@")[0] ||
-    "User";
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Mobile overlay */}
+    <div className="h-screen overflow-hidden bg-slate-50">
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <button
           type="button"
@@ -65,10 +63,11 @@ export default function AppLayout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Fixed sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800/70 bg-slate-950 text-white transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col overflow-y-auto border-r border-slate-800/70 bg-slate-950 text-white transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
       >
         {/* Brand */}
         <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-800/80 px-6">
@@ -96,7 +95,7 @@ export default function AppLayout() {
         </div>
 
         {/* Navigation */}
-        <div className="px-4 pt-8">
+        <div className="shrink-0 px-4 pt-8">
           <p className="mb-4 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Main Menu
           </p>
@@ -123,41 +122,50 @@ export default function AppLayout() {
         </div>
 
         {/* Bottom section */}
-        <div className="mt-auto  border-t border-slate-800/80 p-4">
-
-
+        <div className="mt-auto shrink-0 border-t border-slate-800/80 p-4">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 cursor-pointer rounded-xl px-4 py-3.5 text-sm font-medium text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
           >
             <LogOut size={20} />
             <span>Logout</span>
           </button>
 
           <p className="mt-4 px-4 text-[11px] text-slate-600">
-            FinTrack · Expense & Finance Tracker
+            FinTrack · Expense &amp; Finance Tracker
           </p>
         </div>
       </aside>
 
-      {/* Main area */}
-      <div className="min-h-screen min-w-0 md:ml-72">
-        {/* Top header */}
-
-        <header className="flex h-[72px] items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
+      {/* Main area: fixed viewport height */}
+      <div className="ml-0 flex h-screen min-w-0 flex-col overflow-hidden md:ml-72">
+        {/* Fixed header */}
+        <header className="z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-8">
           {/* Left side */}
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">
-              Expense &amp; Finance Tracker
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Your personal financial workspace
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            {/* Mobile menu button */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
+            >
+              <MenuIcon />
+            </button>
+
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-bold text-slate-900">
+                Expense &amp; Finance Tracker
+              </h2>
+              <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">
+                Your personal financial workspace
+              </p>
+            </div>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <div className="hidden text-right sm:block">
               <p className="text-xs text-slate-500">
                 Welcome back,
@@ -168,7 +176,7 @@ export default function AppLayout() {
             </div>
 
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700 sm:h-11 sm:w-11"
               title={username}
               aria-label={`User profile: ${username}`}
             >
@@ -177,12 +185,32 @@ export default function AppLayout() {
           </div>
         </header>
 
-
-        {/* Page content */}
-        <main className="min-h-[calc(100vh-4rem)] w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-9">
+        {/* Only this section scrolls */}
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-9">
           <Outlet />
         </main>
       </div>
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </svg>
   );
 }
