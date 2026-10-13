@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -22,6 +21,7 @@ const formatCurrency = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(amount) || 0);
 
@@ -30,7 +30,9 @@ const formatDate = (dateValue) => {
 
   const date = new Date(dateValue);
 
-  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
 
   return date.toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -51,15 +53,18 @@ export default function Dashboard() {
     (state) => state.dashboard
   );
 
-  const transactionState = useSelector((state) => state.transactions);
+  const transactionState = useSelector(
+    (state) => state.transactions
+  );
 
-  // Fetch existing dashboard and transaction data.
   useEffect(() => {
     dispatch(fetchDashboardSummary());
     dispatch(fetchTransactions());
   }, [dispatch]);
 
-  const transactions = Array.isArray(transactionState?.transactions)
+  const transactions = Array.isArray(
+    transactionState?.transactions
+  )
     ? transactionState.transactions
     : [];
 
@@ -124,10 +129,11 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 sm:space-y-8">
+
       {/* Page heading */}
-      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
+      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-indigo-600">
             <span className="h-2 w-2 rounded-full bg-indigo-600" />
             Financial overview
@@ -137,14 +143,14 @@ export default function Dashboard() {
             Dashboard
           </h1>
 
-          <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
             Track your income, monitor expenses, and stay in control of your money.
           </p>
         </div>
 
         <Link
           to="/transactions"
-          className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700"
+          className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 sm:px-5"
         >
           <CircleDollarSign size={18} />
           Manage transactions
@@ -154,18 +160,19 @@ export default function Dashboard() {
 
       {/* Summary loading */}
       {loading && (
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-500">
-          <RefreshCw size={18} className="animate-spin text-indigo-600" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+          <RefreshCw
+            size={18}
+            className="animate-spin text-indigo-600"
+          />
           Refreshing your financial summary...
         </div>
       )}
 
       {/* Summary error */}
       {error && (
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center">
-          <p className="text-sm text-rose-700">
-            {error}
-          </p>
+        <div className="flex flex-col justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 sm:flex-row sm:items-center">
+          <p className="text-sm text-rose-700">{error}</p>
 
           <button
             type="button"
@@ -178,9 +185,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Financial summary cards */}
+      {/* Financial summary */}
       <section>
-        <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
               Your finances
@@ -196,46 +203,54 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => {
             const Icon = card.icon;
 
             return (
               <article
                 key={card.title}
-                className="group relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-slate-200/60 sm:p-6"
+                className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md sm:p-5"
               >
                 <div
                   className={`absolute inset-x-0 top-0 h-1 ${card.accent}`}
                 />
 
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-500">
-                      {card.title}
-                    </p>
-
-                    <p
-                      className={`mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl ${card.amountColor}`}
-                    >
-                      {card.isCount
-                        ? Number(card.amount).toLocaleString("en-IN")
-                        : formatCurrency(card.amount)}
-                    </p>
-                  </div>
+                {/* Title and icon occupy their own row */}
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 text-sm font-medium text-slate-500">
+                    {card.title}
+                  </p>
 
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${card.iconBg} ${card.iconColor}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.iconBg} ${card.iconColor} sm:h-11 sm:w-11`}
                   >
-                    <Icon size={23} strokeWidth={2} />
+                    <Icon size={22} strokeWidth={2} />
                   </div>
                 </div>
 
+                {/* Full-width amount prevents currency wrapping */}
+                <p
+                  className={`mt-4 min-w-0 whitespace-nowrap text-[clamp(1.1rem,2vw,1.8rem)] font-bold leading-tight tracking-tight ${card.amountColor}`}
+                >
+                  {card.isCount
+                    ? Number(card.amount).toLocaleString("en-IN")
+                    : formatCurrency(card.amount)}
+                </p>
+
                 <div className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4">
-                  <ArrowUpRight
-                    size={15}
-                    className="text-slate-400"
-                  />
+                  {card.isCount ? (
+                    <ReceiptText
+                      size={15}
+                      className="shrink-0 text-slate-400"
+                    />
+                  ) : (
+                    <ArrowUpRight
+                      size={15}
+                      className="shrink-0 text-slate-400"
+                    />
+                  )}
+
                   <p className="text-xs text-slate-500">
                     {card.description}
                   </p>
@@ -247,8 +262,8 @@ export default function Dashboard() {
       </section>
 
       {/* Recent transactions */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-4 py-5 sm:flex-row sm:items-center sm:px-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
               Recent transactions
@@ -268,12 +283,12 @@ export default function Dashboard() {
         </div>
 
         {recentTransactions.length === 0 ? (
-          <div className="flex flex-col items-center px-5 py-14 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-              <ReceiptText size={29} />
+          <div className="flex flex-col items-center px-5 py-12 text-center sm:py-14">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <ReceiptText size={27} />
             </div>
 
-            <h3 className="mt-5 text-base font-semibold text-slate-800">
+            <h3 className="mt-4 text-base font-semibold text-slate-800">
               No transactions yet
             </h3>
 
@@ -301,11 +316,11 @@ export default function Dashboard() {
               return (
                 <div
                   key={transaction._id || transaction.id}
-                  className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-slate-50/80 sm:px-7"
+                  className="flex min-w-0 items-center justify-between gap-3 px-4 py-4 transition hover:bg-slate-50/80 sm:px-6"
                 >
                   <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${
                         isIncome
                           ? "bg-emerald-50 text-emerald-600"
                           : "bg-rose-50 text-rose-600"
@@ -320,16 +335,22 @@ export default function Dashboard() {
                       </p>
 
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                        <span>{transaction.category || "Uncategorized"}</span>
+                        <span>
+                          {transaction.category || "Uncategorized"}
+                        </span>
                         <span className="text-slate-300">•</span>
-                        <span>{formatDate(transaction.date || transaction.createdAt)}</span>
+                        <span>
+                          {formatDate(
+                            transaction.date || transaction.createdAt
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="shrink-0 text-right">
                     <p
-                      className={`text-sm font-bold sm:text-base ${
+                      className={`whitespace-nowrap text-xs font-bold sm:text-base ${
                         isIncome
                           ? "text-emerald-600"
                           : "text-rose-600"
@@ -355,7 +376,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
+        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-4 sm:px-6">
           <Link
             to="/transactions"
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-indigo-600"
@@ -366,8 +387,8 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Helpful footer panel */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white shadow-lg shadow-indigo-600/10 sm:p-8">
+      {/* Helpful footer */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-5 text-white shadow-lg shadow-indigo-600/10 sm:p-8">
         <div className="relative z-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-indigo-50">
